@@ -40,7 +40,7 @@ static inline void*
 _kaddr(const char *file, int line, physaddr_t pa)
 {
 	if (PGNUM(pa) >= npages)
-		_panic(file, line, "KADDR called with invalid pa %08lx", pa);
+		_panic(file, line, "KADDR called with invalid pa %08lx 0x%x >= 0x%x", pa, PGNUM(pa), npages);
 	return (void *)(pa + KERNBASE);
 }
 
