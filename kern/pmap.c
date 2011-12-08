@@ -164,6 +164,7 @@ mem_init(void)
     /* lj */
     //cprintf("before pages alloc npages %x sizeof %x\n", npages, sizeof(struct Page));
     pages = (struct Page *) boot_alloc(npages * sizeof(struct Page));
+    n = ROUNDUP(npages * sizeof(struct Page), PGSIZE);
 
 
 	//////////////////////////////////////////////////////////////////////
@@ -193,6 +194,8 @@ mem_init(void)
 	//      (ie. perm = PTE_U | PTE_P)
 	//    - pages itself -- kernel RW, user NONE
 	// Your code goes here:
+    /* lj */
+    boot_map_region(kern_pgdir, UPAGES, n, PADDR(pages), PTE_U);
 
 	//////////////////////////////////////////////////////////////////////
 	// Use the physical memory that 'bootstack' refers to as the kernel
@@ -205,6 +208,9 @@ mem_init(void)
 	//       overwrite memory.  Known as a "guard page".
 	//     Permissions: kernel RW, user NONE
 	// Your code goes here:
+    /* lj */
+    n = ROUNDUP(KSTKSIZE, PGSIZE);
+    boot_map_region(kern_pgdir, KSTACKTOP-KSTKSIZE, n, PADDR(bootstack), PTE_W);
 
 	//////////////////////////////////////////////////////////////////////
 	// Map all of physical memory at KERNBASE.
@@ -214,6 +220,9 @@ mem_init(void)
 	// we just set up the mapping anyway.
 	// Permissions: kernel RW, user NONE
 	// Your code goes here:
+    /* lj */
+    n = ROUNDUP(0x10000000, PGSIZE);
+    boot_map_region(kern_pgdir, KERNBASE, n, 0, PTE_W);
 
 	// Check that the initial page directory has been set up correctly.
 	check_kern_pgdir();
@@ -494,18 +503,24 @@ boot_map_region(pde_t *pgdir, uintptr_t va, size_t size, physaddr_t pa, int perm
     pte_t *pte = NULL;
     uint32_t npg = size / PGSIZE;
     uint32_t i = 0;
+    uintptr_t va1 = va;
+    physaddr_t pa1 = pa;
 
+    perm &= 0xFFF;
+    pa1 = PTE_ADDR(pa);
     i = 0;
     while(i < npg) {
         /*FIXME: 1.maybe overlapped with others
         * */
-        char *ptr = ((char *)(va)) + (i * PGSIZE);
-        if(NULL == (pte = pgdir_walk(pgdir, ptr, 1))) {
+        if(NULL == (pte = pgdir_walk(pgdir, (void *)va1, 1))) {
             break;
         }
-        assert(pte);
-        *pte |= ((perm | PTE_P) & 0XFFF);
+        pgdir[PDX(va1)] |= perm;
+        *pte |= pa1 | perm | PTE_P;
+
         ++i;
+        va1 += PGSIZE;
+        pa1 += PGSIZE;
     }
 }
 
