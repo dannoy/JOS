@@ -20,6 +20,24 @@ start:
   movw    %ax,%ds             # -> Data Segment
   movw    %ax,%es             # -> Extra Segment
   movw    %ax,%ss             # -> Stack Segment
+  #lj detect memory 1
+DetectError1:
+  # Nullify the A-register.
+  xorw    %ax,%ax
+
+  # Switch to the BIOS (= request low memory size).
+  int $0x12
+
+  # The carry flag is set, it failed.
+  jc DetectError1
+
+  # Test the A-register with itself.
+  test %ax,%ax
+
+  # The zero flag is set, it failed.
+  jz DetectError1
+
+  # AX = amount of continuous memory in kB starting from 0.
 
   # Enable A20:
   #   For backwards compatibility with the earliest PCs, physical
