@@ -25,6 +25,7 @@ struct Command {
 static struct Command commands[] = {
 	{ "help", "Display this list of commands", mon_help },
 	{ "kerninfo", "Display information about the kernel", mon_kerninfo },
+	{ "backtrace", "Backtrace the runtime environment", mon_backtrace},
 };
 #define NCOMMANDS (sizeof(commands)/sizeof(commands[0]))
 
@@ -61,9 +62,60 @@ int
 mon_backtrace(int argc, char **argv, struct Trapframe *tf)
 {
 	// Your code here.
+    uint32_t current_bp, bp, ip, arg;
+    uint32_t *i = NULL;
+    uint32_t current_sp, current_eip;
+    struct Eipdebuginfo dbg_info;
+    int index = 0;
+
+    current_bp = read_ebp();
+    current_sp = read_esp();
+    //cprintf("esp 0x%x \n", current_sp);
+    debuginfo_eip((uintptr_t )(mon_backtrace), &dbg_info);
+    cprintf("#%d ebp 0x%x reip 0x%x %.*s(0x%x,0x%x,0x%x)+0 at %s:%d\n",
+                    index++,
+                    current_bp, 
+                    *((uint32_t *)current_bp + 1),
+                    dbg_info.eip_fn_namelen, dbg_info.eip_fn_name,
+                    *((uint32_t *)current_bp + 2),
+                    *((uint32_t *)current_bp + 3),
+                    *((uint32_t *)current_bp + 4),
+                    dbg_info.eip_file,
+                    dbg_info.eip_line);
+    current_eip = *((uint32_t *)current_bp + 1);
+    do {
+        debuginfo_eip((uintptr_t )(*((uint32_t *)current_bp + 1)), &dbg_info);
+        current_bp = *((uint32_t *)current_bp);
+
+        if(!current_bp) {
+            cprintf("#%d ebp 0x%08x reip (unknown)\n",
+                        index++,
+                        current_bp);
+            break;
+        }
+
+        cprintf("#%d ebp 0x%x reip 0x%x %.*s(",
+                        index++,
+                        current_bp, 
+                        *((uint32_t *)current_bp + 1),
+                        dbg_info.eip_fn_namelen, dbg_info.eip_fn_name);
+
+        //for(i = (uint32_t *)current_bp + 2; i < (uint32_t *)bp; ++i) {
+        for(i = (uint32_t *)current_bp + 2; i < (uint32_t *)current_bp + 2 + dbg_info.eip_fn_narg; ++i) {
+            cprintf("0x%x,", *((uint32_t *)i));
+        }
+        if(dbg_info.eip_fn_narg) {
+            cprintf("\b");
+        }
+        cprintf(")+%d at %s:%d\n",
+                    current_eip - dbg_info.eip_fn_addr,
+                    dbg_info.eip_file,
+                    dbg_info.eip_line);
+        current_eip = *((uint32_t *)current_bp + 1);
+    } while(current_bp);
+
 	return 0;
 }
-
 
 
 /***** Kernel monitor command interpreter *****/
