@@ -165,12 +165,15 @@ mem_init(void)
     /* lj */
     //cprintf("before pages alloc npages %x sizeof %x\n", npages, sizeof(struct Page));
     pages = (struct Page *) boot_alloc(npages * sizeof(struct Page));
-    n = ROUNDUP(npages * sizeof(struct Page), PGSIZE);
+    //n = ROUNDUP(npages * sizeof(struct Page), PGSIZE);
 
 
 	//////////////////////////////////////////////////////////////////////
 	// Make 'envs' point to an array of size 'NENV' of 'struct Env'.
 	// LAB 3: Your code here.
+    //n = ROUNDUP(NENV * sizeof(struct Env), PGSIZE);
+    n = NENV * sizeof(struct Env);
+    envs = (struct Env *) boot_alloc(n);
 
 	//////////////////////////////////////////////////////////////////////
 	// Now that we've allocated the initial kernel data structures, we set
@@ -200,6 +203,7 @@ mem_init(void)
 	//    - pages itself -- kernel RW, user NONE
 	// Your code goes here:
     /* lj */
+    n = ROUNDUP(npages * sizeof(struct Page), PGSIZE);
     boot_map_region(kern_pgdir, UPAGES, n, PADDR(pages), PTE_U);
 
 	//////////////////////////////////////////////////////////////////////
@@ -209,6 +213,9 @@ mem_init(void)
 	//    - the new image at UENVS  -- kernel R, user R
 	//    - envs itself -- kernel RW, user NONE
 	// LAB 3: Your code here.
+    /* lj */
+    n = ROUNDUP(NENV * sizeof(struct Env), PGSIZE);
+    boot_map_region(kern_pgdir, UENVS, n, PADDR(envs), PTE_U);
 
 	//////////////////////////////////////////////////////////////////////
 	// Use the physical memory that 'bootstack' refers to as the kernel

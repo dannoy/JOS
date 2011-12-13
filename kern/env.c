@@ -116,6 +116,14 @@ env_init(void)
 {
 	// Set up envs array
 	// LAB 3: Your code here.
+    /* lj */
+    size_t i;
+
+    memset(envs, 0, NENV * sizeof(struct Env));
+    for(i = NENV; i > 0; --i) {
+        envs[i-1].env_link = env_free_list;
+        env_free_list = &envs[i-1];
+    }
 
 	// Per-CPU part of the initialization
 	env_init_percpu();
@@ -128,6 +136,7 @@ env_init_percpu(void)
 	lgdt(&gdt_pd);
 	// The kernel never uses GS or FS, so we leave those set to
 	// the user data segment.
+    // TODO:why GD_UD|3
 	asm volatile("movw %%ax,%%gs" :: "a" (GD_UD|3));
 	asm volatile("movw %%ax,%%fs" :: "a" (GD_UD|3));
 	// The kernel does use ES, DS, and SS.  We'll change between
@@ -179,6 +188,7 @@ env_setup_vm(struct Env *e)
 	//    - The functions in kern/pmap.h are handy.
 
 	// LAB 3: Your code here.
+    /* lj */
 
 	// UVPT maps the env's own page table read-only.
 	// Permissions: kernel R, user R
