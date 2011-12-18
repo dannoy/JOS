@@ -131,7 +131,7 @@ QEMUOPTS = -hda $(OBJDIR)/kern/kernel.img -serial mon:stdio -gdb tcp::$(GDBPORT)
 IMAGES = $(OBJDIR)/kern/kernel.img
 #QEMUOPTS += $(QEMUEXTRA)
 
-QEMUOPTS = -hda $(OBJDIR)/kern/kernel.img -serial mon:stdio $(QEMUEXTRA) -m 512M
+#QEMUOPTS = -hda $(OBJDIR)/kern/kernel.img -serial mon:stdio $(QEMUEXTRA) -m 512M
 
 .gdbinit: .gdbinit.tmpl
 	sed "s/localhost:1234/localhost:$(GDBPORT)/" < $^ > $@
