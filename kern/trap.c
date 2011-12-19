@@ -4,6 +4,7 @@
 
 /* lj */
 #include <inc/string.h>
+#include <kern/syscall.h>
 
 #include <kern/pmap.h>
 #include <kern/trap.h>
@@ -184,11 +185,53 @@ print_regs(struct PushRegs *regs)
 	cprintf("  eax  0x%08x\n", regs->reg_eax);
 }
 
+
+void
+breakpoint_handler(struct Trapframe *tf)
+{
+	while (1)
+		monitor(NULL);
+}
+
+void
+syscall_handler(struct Trapframe *tf)
+{
+    uint32_t ret;
+    uint32_t sysnum;
+    uint32_t a1, a2, a3, a4, a5;
+    sysnum = tf->tf_regs.reg_eax;
+    a1 = tf->tf_regs.reg_edx;
+    a2 = tf->tf_regs.reg_ecx;
+    a3 = tf->tf_regs.reg_ebx;
+    a4 = tf->tf_regs.reg_edi;
+    a5 = tf->tf_regs.reg_esi;
+
+    ret = syscall(sysnum, a1, a2, a3, a4, a5);
+    tf->tf_regs.reg_eax = ret;
+}
+
 static void
 trap_dispatch(struct Trapframe *tf)
 {
 	// Handle processor exceptions.
 	// LAB 3: Your code here.
+    /* lj */
+    switch(tf->tf_trapno) {
+        case T_PGFLT:
+            page_fault_handler(tf);
+            return;
+        break;
+        case T_BRKPT:
+            breakpoint_handler(tf);
+            return;
+        break;
+        case T_SYSCALL:
+            syscall_handler(tf);
+            return;
+        break;
+        default:
+            ;
+    }
 
 	// Unexpected trap: The user process or the kernel has a bug.
 	print_trapframe(tf);
@@ -249,6 +292,10 @@ page_fault_handler(struct Trapframe *tf)
 	// Handle kernel-mode page faults.
 
 	// LAB 3: Your code here.
+    /* lj */
+    if(!(tf->tf_cs & 0x3)) {
+        panic("page fault in kernel mode");
+    }
 
 	// We've already handled kernel-mode exceptions, so if we get here,
 	// the page fault happened in user mode.

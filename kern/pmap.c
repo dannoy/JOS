@@ -708,8 +708,41 @@ int
 user_mem_check(struct Env *env, const void *va, size_t len, int perm)
 {
 	// LAB 3: Your code here.
+    uint8_t *lva = ROUNDDOWN((uint8_t *)va, PGSIZE);
+    uint8_t *hva = ROUNDUP((uint8_t *)va + len, PGSIZE);
+    uint8_t *addr = lva;
+    //cprintf("0x%x %x %x\n", va, lva, hva);
 
-	return 0;
+    int ret = 0;
+    pte_t *pte = NULL;
+
+    for(addr = lva; addr < hva; addr += PGSIZE) {
+        if((size_t)lva >= ULIM) {
+            user_mem_check_addr = (intptr_t )va;
+            ret = -E_FAULT;
+        }
+
+        if(NULL != (pte =pgdir_walk(env->env_pgdir, addr, 0))) {
+            if(*pte & perm) {
+            }
+            else {
+                user_mem_check_addr = (intptr_t )addr;
+                ret = -E_FAULT;
+                break;
+            }
+        }
+        else {
+            user_mem_check_addr = (intptr_t )addr;
+            ret = -E_FAULT;
+            break;
+        }
+    }
+        
+    if(ret && user_mem_check_addr == (intptr_t )lva) {
+        user_mem_check_addr = (intptr_t )va;
+    }
+
+	return ret;
 }
 
 //

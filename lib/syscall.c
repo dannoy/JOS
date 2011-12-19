@@ -34,6 +34,7 @@ syscall(int num, int check, uint32_t a1, uint32_t a2, uint32_t a3, uint32_t a4, 
 	if(check && ret > 0)
 		panic("syscall %d returned %d (> 0)", num, ret);
 
+    //cprintf("user get ret %d\n", ret);
 	return ret;
 }
 
@@ -58,6 +59,6 @@ sys_env_destroy(envid_t envid)
 envid_t
 sys_getenvid(void)
 {
-	 return syscall(SYS_getenvid, 0, 0, 0, 0, 0, 0);
+    return syscall(SYS_getenvid, 0, 0, 0, 0, 0, 0);
 }
 
