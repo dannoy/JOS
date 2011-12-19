@@ -74,6 +74,7 @@ start32:
 	movl    $0x0, %ebp       # nuke frame pointer
 
 	# Call mp_main().  (Exercise for the reader: why the indirect call?)
+    #TODO:why indirect call?
 	movl    $mp_main, %eax
 	call    *%eax
 
