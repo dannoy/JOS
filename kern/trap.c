@@ -97,7 +97,12 @@ trap_init(void)
 
 	// LAB 3: Your code here.
     /* lj */
-    memset(idt, 0, sizeof(idt));
+    int i = 0;
+    //memset(idt, 0, sizeof(idt));
+    SETGATE(idt[0] , 0, GD_KT, __idt_default, 0);
+    for (i = 1; i < 255; ++i) {
+        idt[i] = idt[0];
+    }
     SETGATE(idt[T_DIVIDE] , 1, GD_KT, __idt_divide, 0);
     SETGATE(idt[T_DEBUG] , 1, GD_KT, __idt_debug, 0);
     SETGATE(idt[T_NMI] , 0, GD_KT, __idt_nmi, 0);
@@ -117,7 +122,6 @@ trap_init(void)
     SETGATE(idt[T_MCHK] , 1, GD_KT, __idt_mchk, 0);
     SETGATE(idt[T_SIMDERR] , 1, GD_KT, __idt_simd, 0);
     SETGATE(idt[T_SYSCALL] , 0, GD_KT, __idt_syscall, 3);
-    //SETGATE(idt[T_DEFAULT] , 0, GD_KT, __idt_default, 0);
 
 
 	// Per-CPU setup 

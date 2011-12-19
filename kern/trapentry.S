@@ -66,7 +66,7 @@ TRAPHANDLER(__idt_align, T_ALIGN)		// aligment check
 TRAPHANDLER_NOEC(__idt_mchk, T_MCHK)		// machine check
 TRAPHANDLER_NOEC(__idt_simd, T_SIMDERR)		// SIMD floating point error
 TRAPHANDLER_NOEC(__idt_syscall, T_SYSCALL)		// system call
-#TRAPHANDLER(__idt_default, T_DEFAULT)		// catchall
+TRAPHANDLER(__idt_default, T_DEFAULT)		// catchall
 
 
 
