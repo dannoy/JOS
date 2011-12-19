@@ -47,10 +47,46 @@
 /*
  * Lab 3: Your code here for generating entry points for the different traps.
  */
+TRAPHANDLER_NOEC(__idt_divide, T_DIVIDE)		// divide error
+TRAPHANDLER_NOEC(__idt_debug, T_DEBUG)		// debug exception
+TRAPHANDLER_NOEC(__idt_nmi, T_NMI)		// non-maskable interrupt
+TRAPHANDLER_NOEC(__idt_breakpoint, T_BRKPT)		// breakpoint
+TRAPHANDLER_NOEC(__idt_overflow, T_OFLOW)		// overflow
+TRAPHANDLER_NOEC(__idt_bound, T_BOUND)		// bounds check
+TRAPHANDLER_NOEC(__idt_illop, T_ILLOP)		// illegal opcode
+TRAPHANDLER_NOEC(__idt_device, T_DEVICE)		// device not available
+TRAPHANDLER(__idt_dblflt, T_DBLFLT)		// double fault
+TRAPHANDLER(__idt_tss, T_TSS)		// invalid task switch segment
+TRAPHANDLER(__idt_segnp, T_SEGNP)		// segment not present
+TRAPHANDLER(__idt_stack, T_STACK)		// stack exception
+TRAPHANDLER(__idt_gpflt, T_GPFLT)		// general protection fault
+TRAPHANDLER(__idt_pgflt, T_PGFLT)		// page fault
+TRAPHANDLER_NOEC(__idt_fperr, T_FPERR)		// floating point error
+TRAPHANDLER(__idt_align, T_ALIGN)		// aligment check
+TRAPHANDLER_NOEC(__idt_mchk, T_MCHK)		// machine check
+TRAPHANDLER_NOEC(__idt_simd, T_SIMDERR)		// SIMD floating point error
+TRAPHANDLER_NOEC(__idt_syscall, T_SYSCALL)		// system call
+#TRAPHANDLER(__idt_default, T_DEFAULT)		// catchall
 
 
 
 /*
  * Lab 3: Your code here for _alltraps
  */
+.globl _alltraps
+_alltraps:
+    pushl %ds
+    pushl %es
+    pushal
+    movl $GD_KD, %eax
+    movw %ax, %ds
+    movw %ax, %es
+    pushl %esp
+    call trap
+    pop %esp
+    popal
+    pop %es
+    pop %ds
+    addl $0x8, %esp
+    iret
 

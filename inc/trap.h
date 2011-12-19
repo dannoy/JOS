@@ -69,6 +69,7 @@ struct Trapframe {
 	uint16_t tf_padding3;
 	uint32_t tf_eflags;
 	/* below here only when crossing rings, such as from user to kernel */
+    /*lj: When switching different level occurs in the process of iret, pop esp and ss*/
 	uintptr_t tf_esp;
 	uint16_t tf_ss;
 	uint16_t tf_padding4;

@@ -19,4 +19,4 @@ enum {
 	NSYSCALLS
 };
 
-#endif /* !JOS_INC_SYSCALL_H */
+#endif /* !JOS_INC_SYSCALL_H */ 
