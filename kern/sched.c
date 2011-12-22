@@ -57,7 +57,7 @@ sched_yield(void)
             index = NCPU;
         }
     }
-    cprintf("[%d] %d 0x%x\n", thiscpu->cpu_id, index, newenv);
+    //cprintf("[%d] %d 0x%x\n", thiscpu->cpu_id, index, newenv);
 
     if(newenv) {
         return env_run(newenv);
