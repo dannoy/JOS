@@ -52,6 +52,7 @@ i386_init(void)
 	// Your code here:
 
 	// Starting non-boot CPUs
+    lock_kernel();
 	boot_aps();
 
 	// Should always have idle processes at first.
@@ -64,8 +65,12 @@ i386_init(void)
 	ENV_CREATE(TEST, ENV_TYPE_USER);
 #else
 	// Touch all you want.
-	ENV_CREATE(user_primes, ENV_TYPE_USER);
+    //ENV_CREATE(user_primes, ENV_TYPE_USER);
     //ENV_CREATE(user_hello, ENV_TYPE_USER);
+    ENV_CREATE(user_yield, ENV_TYPE_USER);
+    ENV_CREATE(user_yield, ENV_TYPE_USER);
+    ENV_CREATE(user_yield, ENV_TYPE_USER);
+    ENV_CREATE(user_yield, ENV_TYPE_USER);
     //ENV_CREATE(user_buggyhello, ENV_TYPE_USER);
     //ENV_CREATE(user_evilhello, ENV_TYPE_USER);
     //ENV_CREATE(user_divzero, ENV_TYPE_USER);
@@ -131,7 +136,8 @@ mp_main(void)
 	// Your code here:
 
 	// Remove this after you finish Exercise 4
-	for (;;);
+    lock_kernel();
+	sched_yield();
 }
 
 /*
