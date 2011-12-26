@@ -360,7 +360,22 @@ page_fault_handler(struct Trapframe *tf)
 	// LAB 3: Your code here.
     /* lj */
     if(!(tf->tf_cs & 0x3)) {
-        cprintf("page fault:cs 0x%x eip 0x%x env 0x%x envid 0x%x\n", tf->tf_cs, tf->tf_eip, thiscpu->cpu_env,thiscpu->cpu_env->env_id);
+        cprintf("page fault:cs 0x%x eip 0x%x env 0x%x envid 0x%x err 0x%x va 0x%x eax 0x%x edx 0x%x\n", tf->tf_cs, tf->tf_eip, thiscpu->cpu_env,thiscpu->cpu_env->env_id, tf->tf_err, fault_va, tf->tf_regs.reg_eax, tf->tf_regs.reg_edx);
+
+        pde_t *pde = NULL;
+        pde_t *pte = NULL;
+        pde = &thiscpu->cpu_env->env_pgdir[PDX(fault_va)];
+        cprintf("pde 0x%x 0x%x\n", pde, *pde);
+        pte = (pte_t *)KADDR(PTE_ADDR(*pde));
+        cprintf("pte 0x%x 0x%x\n", pte, *pte);
+        pte = &pte[PTX(fault_va)];
+        cprintf("pte 0x%x 0x%x\n", pte, *pte);
+        cprintf("fault_va 0x%x 0x%x\n", fault_va, *(int32_t *)fault_va);
+        //*(int32_t *)fault_va = 1;
+        //cprintf("pte 0x%x 0x%x\n", fault_va, *(int32_t *)fault_va);
+        //pte = KADDR(PTE_ADDR(pte));
+        //cprintf("pte 0x%x 0x%x\n", pte, *pte);
+
         panic("[%d]page fault in kernel mode", thiscpu->cpu_id);
     }
 
@@ -396,6 +411,41 @@ page_fault_handler(struct Trapframe *tf)
 	//   (the 'tf' variable points at 'curenv->env_tf').
 
 	// LAB 4: Your code here.
+    /* lj */
+    struct UTrapframe *utf = NULL;
+    //user_mem_assert(curenv, (void *)fault_va, PGSIZE, PTE_U | PTE_W);
+
+    do {
+        //cprintf("user fault va 0x%x ip 0x%x 0x%x 0x%x envid 0x%x upcall 0x%x\n", fault_va, tf->tf_eip, tf->tf_regs.reg_eax, tf->tf_regs.reg_edx, curenv->env_id, curenv->env_pgfault_upcall);
+        if(!curenv->env_pgfault_upcall) {
+            cprintf("user fault va 0x%x ip 0x%x\n", fault_va, tf->tf_eip);
+            break;
+        }
+
+        if(tf->tf_esp >= UXSTACKTOP - PGSIZE && tf->tf_esp < UXSTACKTOP - 1) {
+            utf = (struct UTrapframe *)(tf->tf_esp - 4 - sizeof(struct UTrapframe));
+        }
+        else {
+            utf = (struct UTrapframe *)(UXSTACKTOP - sizeof(struct UTrapframe));
+        }
+
+        user_mem_assert(curenv, utf, sizeof(struct UTrapframe), PTE_U | PTE_W);
+
+        //Save to user exception stack
+        utf->utf_fault_va = fault_va;
+        utf->utf_err = tf->tf_err;
+        utf->utf_regs = tf->tf_regs;
+        utf->utf_eip = tf->tf_eip;
+        utf->utf_eflags = tf->tf_eflags;
+        utf->utf_esp = tf->tf_esp;
+
+        //Modify original info
+        tf->tf_esp = (intptr_t)utf; //setup return esp
+        tf->tf_eip = (intptr_t)curenv->env_pgfault_upcall;//setup new eip
+
+        return;
+    } while(0);
+
 
 	// Destroy the environment that caused the fault.
 	cprintf("[%08x] user fault va %08x ip %08x\n",

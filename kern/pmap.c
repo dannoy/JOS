@@ -781,7 +781,7 @@ user_mem_check(struct Env *env, const void *va, size_t len, int perm)
     uint8_t *lva = ROUNDDOWN((uint8_t *)va, PGSIZE);
     uint8_t *hva = ROUNDUP((uint8_t *)va + len, PGSIZE);
     uint8_t *addr = lva;
-    //cprintf("0x%x %x %x\n", va, lva, hva);
+    //cprintf("ck 0x%x %x %x\n", va, lva, hva);
 
     int ret = 0;
     pte_t *pte = NULL;
@@ -792,7 +792,8 @@ user_mem_check(struct Env *env, const void *va, size_t len, int perm)
             ret = -E_FAULT;
         }
 
-        if(NULL != (pte =pgdir_walk(env->env_pgdir, addr, 0))) {
+        if(NULL != (pte = pgdir_walk(env->env_pgdir, addr, 0))) {
+            //cprintf("ck 0x%x %x %x\n", va, pte, *pte);
             if(*pte & perm) {
             }
             else {

@@ -23,7 +23,7 @@ sys_cputs(const char *s, size_t len)
 
 	// LAB 3: Your code here.
     /* lj */
-    user_mem_assert(curenv, s, len, PTE_U | PTE_U);
+    user_mem_assert(curenv, s, len, PTE_U);
 
 	// Print the string supplied by the user.
 	cprintf("%.*s", len, s);
@@ -150,7 +150,25 @@ static int
 sys_env_set_pgfault_upcall(envid_t envid, void *func)
 {
 	// LAB 4: Your code here.
-	panic("sys_env_set_pgfault_upcall not implemented");
+    struct Env *env = NULL;
+    int ret = 0;
+    struct Page *p = NULL;
+    pte_t *pte = NULL;
+
+    //cprintf("set upcall 0x%x\n", func);
+
+    if((ret = envid2env(envid, &env, 1)) < 0) {
+        return ret;
+    }
+    else if((size_t)func > UTOP) {
+        return -E_INVAL;
+    }
+
+    env->env_pgfault_upcall = func;
+    //cprintf("kernel set upcall 0x%x 0x%x\n", func, env->env_pgfault_upcall);
+
+    return ret;
+    //panic("sys_env_set_pgfault_upcall not implemented");
 }
 
 // Allocate a page of memory and map it at 'va' with permission
@@ -195,7 +213,7 @@ sys_page_alloc(envid_t envid, void *va, int perm)
     else if((size_t)va & (PGSIZE-1)) {
         return -E_INVAL;
     }
-    else if(0 == (perm & (PTE_U | PTE_P))) {
+    else if((PTE_U | PTE_P) != (perm & (PTE_U | PTE_P))) {
         return -E_INVAL;
     }
     else if(perm & ~(PTE_U | PTE_P | PTE_W | PTE_AVAIL)) {
@@ -259,6 +277,7 @@ sys_page_map(envid_t srcenvid, void *srcva,
     struct Page *p = NULL;
     pte_t *spte = NULL, *dpte = NULL;
 
+    //cprintf("0 0x%x 0x%x 0x%x 0x%x \n",srcenvid, srcva, dstenvid, dstva);
     if((ret = envid2env(srcenvid, &senv, 1)) < 0) {
         return ret;
     }
@@ -280,7 +299,7 @@ sys_page_map(envid_t srcenvid, void *srcva,
     else if(perm & ~(PTE_U | PTE_P | PTE_W | PTE_AVAIL)) {
         return -E_INVAL;
     }
-    else if((*spte & PTE_W) != (perm & PTE_W)) {
+    else if((perm & PTE_W) && !(*spte & PTE_W)) {
         return -E_INVAL;
     }
 
@@ -436,6 +455,9 @@ syscall(uint32_t syscallno, uint32_t a1, uint32_t a2, uint32_t a3, uint32_t a4, 
         break;
         case SYS_page_unmap:
             ret = sys_page_unmap((envid_t)a1, (void *)a2);
+        break;
+        case SYS_env_set_pgfault_upcall:
+            ret = sys_env_set_pgfault_upcall((envid_t)a1, (void *)a2);
         break;
         default:
             ret = -E_INVAL;
