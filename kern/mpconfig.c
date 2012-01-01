@@ -177,6 +177,8 @@ mp_init(void)
 	ismp = 1;
 	lapic = (uint32_t *)conf->lapicaddr;
 
+    cprintf("lapic 0x%x\n", lapic);
+
 	for (p = conf->entries, i = 0; i < conf->entry; i++) {
 		switch (*p) {
 		case MPPROC:

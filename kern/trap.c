@@ -34,26 +34,43 @@ struct Pseudodesc idt_pd = {
 	sizeof(idt) - 1, (uint32_t) idt
 };
 
-void __idt_divide();
-void __idt_debug();
-void __idt_nmi();
-void __idt_breakpoint();
-void __idt_overflow();
-void __idt_bound();
-void __idt_illop();
-void __idt_device();
-void __idt_dblflt();
-void __idt_tss();
-void __idt_segnp();
-void __idt_stack();
-void __idt_gpflt();
-void __idt_pgflt();
-void __idt_fperr();
-void __idt_align();
-void __idt_mchk();
-void __idt_simd();
-void __idt_syscall();
-void __idt_default();
+extern void __idt_divide();
+extern void __idt_debug();
+extern void __idt_nmi();
+extern void __idt_breakpoint();
+extern void __idt_overflow();
+extern void __idt_bound();
+extern void __idt_illop();
+extern void __idt_device();
+extern void __idt_dblflt();
+extern void __idt_tss();
+extern void __idt_segnp();
+extern void __idt_stack();
+extern void __idt_gpflt();
+extern void __idt_pgflt();
+extern void __idt_fperr();
+extern void __idt_align();
+extern void __idt_mchk();
+extern void __idt_simd();
+extern void __idt_syscall();
+
+extern void __idt_irq0();
+extern void __idt_irq1();
+extern void __idt_irq2();
+extern void __idt_irq3();
+extern void __idt_irq4();
+extern void __idt_irq5();
+extern void __idt_irq6();
+extern void __idt_irq7();
+extern void __idt_irq8();
+extern void __idt_irq9();
+extern void __idt_irq10();
+extern void __idt_irq11();
+extern void __idt_irq12();
+extern void __idt_irq13();
+extern void __idt_irq14();
+
+extern void __idt_default();
 
 
 static const char *trapname(int trapno)
@@ -122,6 +139,22 @@ trap_init(void)
     SETGATE(idt[T_MCHK] , 1, GD_KT, __idt_mchk, 0);
     SETGATE(idt[T_SIMDERR] , 1, GD_KT, __idt_simd, 0);
     SETGATE(idt[T_SYSCALL] , 0, GD_KT, __idt_syscall, 3);
+
+    SETGATE(idt[IRQ_OFFSET] , 0, GD_KT, __idt_irq0, 0);
+    SETGATE(idt[IRQ_OFFSET + 1] , 0, GD_KT, __idt_irq1, 0);
+    SETGATE(idt[IRQ_OFFSET + 2] , 0, GD_KT, __idt_irq2, 0);
+    SETGATE(idt[IRQ_OFFSET + 3] , 0, GD_KT, __idt_irq3, 0);
+    SETGATE(idt[IRQ_OFFSET + 4] , 0, GD_KT, __idt_irq4, 0);
+    SETGATE(idt[IRQ_OFFSET + 5] , 0, GD_KT, __idt_irq5, 0);
+    SETGATE(idt[IRQ_OFFSET + 6] , 0, GD_KT, __idt_irq6, 0);
+    SETGATE(idt[IRQ_OFFSET + 7] , 0, GD_KT, __idt_irq7, 0);
+    SETGATE(idt[IRQ_OFFSET + 8] , 0, GD_KT, __idt_irq8, 0);
+    SETGATE(idt[IRQ_OFFSET + 9] , 0, GD_KT, __idt_irq9, 0);
+    SETGATE(idt[IRQ_OFFSET + 10] , 0, GD_KT, __idt_irq10, 0);
+    SETGATE(idt[IRQ_OFFSET + 11] , 0, GD_KT, __idt_irq11, 0);
+    SETGATE(idt[IRQ_OFFSET + 12] , 0, GD_KT, __idt_irq12, 0);
+    SETGATE(idt[IRQ_OFFSET + 13] , 0, GD_KT, __idt_irq13, 0);
+    SETGATE(idt[IRQ_OFFSET + 14] , 0, GD_KT, __idt_irq14, 0);
 
 
 	// Per-CPU setup 
@@ -263,6 +296,11 @@ trap_dispatch(struct Trapframe *tf)
             syscall_handler(tf);
             return;
         break;
+        //case IRQ_OFFSET + 0:
+            //cprintf("clock irq\n");
+            //lapic_init();
+            //sched_yield();
+        //break;
         default:
             ;
     }
@@ -279,6 +317,12 @@ trap_dispatch(struct Trapframe *tf)
 	// Handle clock interrupts. Don't forget to acknowledge the
 	// interrupt using lapic_eoi() before calling the scheduler!
 	// LAB 4: Your code here.
+	if (tf->tf_trapno == IRQ_OFFSET + IRQ_TIMER) {
+        //cprintf("clock irq\n");
+        lapic_eoi();
+        sched_yield();
+		return;
+	}
 
 	// Unexpected trap: The user process or the kernel has a bug.
 	print_trapframe(tf);
@@ -305,6 +349,7 @@ trap(struct Trapframe *tf)
 	// Check that interrupts are disabled.  If this assertion
 	// fails, DO NOT be tempted to fix it by inserting a "cli" in
 	// the interrupt path.
+    assert(tf->tf_eflags & FL_IF); //this line is added by lj to assure correctness
 	assert(!(read_eflags() & FL_IF));
 
 	if ((tf->tf_cs & 3) == 3) {
