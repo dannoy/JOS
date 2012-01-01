@@ -19,7 +19,8 @@ primeproc(void)
 	// fetch a prime from our left neighbor
 top:
 	p = ipc_recv(&envid, 0, 0);
-	cprintf("CPU %d: %d ", thisenv->env_cpunum, p);
+    cprintf("CPU %d: %d \n", thisenv->env_cpunum, p);
+    //cprintf("start %x: %d \n", thisenv->env_id, p);
 
 	// fork a right neighbor to continue the chain
 	if ((id = fork()) < 0)
@@ -30,6 +31,7 @@ top:
 	// filter out multiples of our prime
 	while (1) {
 		i = ipc_recv(&envid, 0, 0);
+        //cprintf("%x: %d %d \n", thisenv->env_id, i, p);
 		if (i % p)
 			ipc_send(id, i, 0, 0);
 	}

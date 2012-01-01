@@ -41,6 +41,12 @@ sched_yield(void)
         index = NCPU;
     }
 
+    //i = 0;
+    //while (i++ < n) {
+        //if(envs[i].env_status) {
+            //cprintf("[sched]%x %d\n", envs[i].env_id, envs[i].env_status);
+        //}
+    //}
     i = 0;
     while (i++ < n) {
         if(envs[index].env_type == ENV_TYPE_IDLE ||
@@ -58,6 +64,7 @@ sched_yield(void)
         }
     }
     //cprintf("[%d] %d 0x%x\n", thiscpu->cpu_id, index, newenv);
+    //cprintf("[%d] %d %d 0x%x\n", thiscpu->cpu_id, index, envs[index].env_status, newenv);
 
     if(newenv) {
         return env_run(newenv);

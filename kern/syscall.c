@@ -394,7 +394,64 @@ static int
 sys_ipc_try_send(envid_t envid, uint32_t value, void *srcva, unsigned perm)
 {
 	// LAB 4: Your code here.
-	panic("sys_ipc_try_send not implemented");
+    /* lj */
+    struct Env *denv = NULL;
+    struct Page *pg = NULL;
+    pte_t *pte = NULL;
+    int ret = 0;
+    //cprintf("%x try_send to %x [%d]\n", curenv->env_id, envid, value);
+
+    if((ret = envid2env(envid, &denv, 0)) < 0) {
+        return -E_BAD_ENV;
+    }
+    else if(!denv->env_ipc_recving) {
+        //cprintf("00\n");
+        return -E_IPC_NOT_RECV;
+    }
+    if((void *)-1 != srcva) {
+        if((size_t)srcva > UTOP) {
+            return -E_INVAL;
+        }
+        else if((size_t)srcva & (PGSIZE-1)) {
+            return -E_INVAL;
+        }
+        else if((PTE_U | PTE_P) != (perm & (PTE_U | PTE_P))) {
+            return -E_INVAL;
+        }
+        else if(perm & ~(PTE_U | PTE_P | PTE_W | PTE_AVAIL)) {
+            return -E_INVAL;
+        }
+        else if(NULL == (pg = page_lookup(curenv->env_pgdir, srcva, &pte))) {
+            return -E_INVAL;
+        }
+        else if((perm & PTE_W) != (*pte & PTE_W)) {
+            return -E_INVAL;
+        }
+    }
+
+    denv->env_ipc_from = curenv->env_id;
+    denv->env_ipc_value = value;
+    if((void *)-1 != srcva) {
+        if((void *)-1 == denv->env_ipc_dstva) {
+            denv->env_ipc_perm = 0;
+        }
+        else if((ret = page_insert(denv->env_pgdir, pg, denv->env_ipc_dstva, perm)) < 0) {
+        }
+        else {
+            denv->env_ipc_perm = perm;
+        }
+    }
+    /* After a env sent ipc to denv,
+     * set denv runnable whether it is successfully sent
+     * */
+    denv->env_ipc_recving = 0;
+    denv->env_tf.tf_regs.reg_eax = ret;
+    denv->env_status = ENV_RUNNABLE;
+
+    //panic("sys_ipc_try_send not implemented");
+    //cprintf("ret %d\n",ret);
+    //cprintf("%x try_send to %x [%d] awake %x\n", curenv->env_id, envid, value, denv->env_id);
+    return ret;
 }
 
 // Block until a value is ready.  Record that you want to receive
@@ -412,8 +469,33 @@ static int
 sys_ipc_recv(void *dstva)
 {
 	// LAB 4: Your code here.
-	panic("sys_ipc_recv not implemented");
-	return 0;
+    /* lj */
+    void *dstva2 = NULL;
+    int ret = 0;
+
+    //cprintf("%x sys_recv\n", curenv->env_id);
+    do {
+        if((void *)-1 == dstva) {
+            break;
+        }
+        if((size_t)ROUNDUP(dstva, PGSIZE) >= UTOP) {
+            //cprintf("%x sys_recv inval\n", curenv->env_id);
+            return -E_INVAL;
+        }
+
+        dstva2 = ROUNDDOWN(dstva, PGSIZE);
+
+        if(dstva2 != dstva) {
+            //cprintf("%x sys_recv inval2\n", curenv->env_id);
+            return -E_INVAL;
+        }
+    } while(0);
+
+    curenv->env_ipc_recving = 1;
+    curenv->env_ipc_dstva = dstva2;
+    curenv->env_status = ENV_NOT_RUNNABLE;
+        //panic("sys_ipc_recv not implemented");
+	return ret;
 }
 
 // Dispatches to the correct kernel function, passing the arguments.
@@ -458,6 +540,12 @@ syscall(uint32_t syscallno, uint32_t a1, uint32_t a2, uint32_t a3, uint32_t a4, 
         break;
         case SYS_env_set_pgfault_upcall:
             ret = sys_env_set_pgfault_upcall((envid_t)a1, (void *)a2);
+        break;
+        case SYS_ipc_try_send:
+            ret = sys_ipc_try_send((envid_t)a1, a2, (void *)a3, a4);
+        break;
+        case SYS_ipc_recv:
+            ret = sys_ipc_recv((void *)a1);
         break;
         default:
             ret = -E_INVAL;

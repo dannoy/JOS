@@ -567,7 +567,8 @@ env_run(struct Env *e)
     //panic("env_run not yet implemented");
     /* lj */
     if(thiscpu->cpu_env != e) {
-        if(thiscpu->cpu_env) {
+        if(thiscpu->cpu_env 
+            && (ENV_RUNNING == thiscpu->cpu_env->env_status)) {
             thiscpu->cpu_env->env_status = ENV_RUNNABLE;
         }
         thiscpu->cpu_env = e;
