@@ -49,10 +49,7 @@ sched_yield(void)
     //}
     i = 0;
     while (i++ < n) {
-        if(envs[index].env_type == ENV_TYPE_IDLE ||
-                envs[index].env_status == ENV_RUNNING) {
-        }
-        else if( envs[index].env_status == ENV_RUNNABLE) {
+        if( envs[index].env_status == ENV_RUNNABLE) {
             newenv = &envs[index];
             break;
         }

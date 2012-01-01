@@ -566,18 +566,11 @@ env_run(struct Env *e)
 
     //panic("env_run not yet implemented");
     /* lj */
-    if(thiscpu->cpu_env != e) {
-        if(thiscpu->cpu_env 
-            && (ENV_RUNNING == thiscpu->cpu_env->env_status)) {
-            thiscpu->cpu_env->env_status = ENV_RUNNABLE;
-        }
-        thiscpu->cpu_env = e;
-        ++e->env_runs;
-	    e->env_status = ENV_RUNNING;
-    }
+    assert(e->env_tf.tf_eflags & FL_IF);
+    curenv = e;
+    ++e->env_runs;
     lcr3(PADDR(e->env_pgdir));
     unlock_kernel();
-    assert(e->env_tf.tf_eflags & FL_IF);
     env_pop_tf(&e->env_tf);
 }
 
