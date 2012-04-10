@@ -302,6 +302,24 @@ mem_init_mp(void)
 	//     Permissions: kernel RW, user NONE
 	//
 	// LAB 4: Your code here:
+    /* lj */
+    int i = 0;
+    pte_t *pte = NULL;
+    uint8_t *lgap = NULL, *hgap = NULL, *addr = NULL;
+    uint8_t *lstk = NULL, *hstk = NULL;
+
+    lgap = (uint8_t *)KSTACKTOP;
+    for(i = 0; i < NCPU; ++i) {
+        hstk = lgap;
+        lgap = (uint8_t *)KSTACKTOP-(i + 1)*(KSTKSIZE + KSTKGAP);
+        lstk = hgap = lgap + KSTKGAP;
+	    boot_map_region(kern_pgdir, (intptr_t)lstk,
+                    KSTKSIZE, PADDR(percpu_kstacks[i]), PTE_W);
+        /* just in case */
+        //for(addr = lgap; addr < hgap; addr += PGSIZE) {
+        //page_remove(kern_pgdir, addr);
+        //}
+    }
 
 }
 
@@ -329,11 +347,13 @@ static int _page_calc_free(int page_seq, int kern_stop)
     int iophysmem = 0, extphysmem = 0;
     //int kern_start = 0, kern_stop = 0;
     int kern_start = 0;
+    int mpentry = 0;
 
     iophysmem = ROUNDDOWN(IOPHYSMEM, PGSIZE) / PGSIZE;
     extphysmem = ROUNDUP(EXTPHYSMEM, PGSIZE) / PGSIZE;
     kern_start = ROUNDDOWN(0x100000, PGSIZE) / PGSIZE;
     //kern_stop = ROUNDUP((int)boot_alloc(0), PGSIZE) / PGSIZE;
+    mpentry = ROUNDDOWN(MPENTRY_PADDR, PGSIZE) / PGSIZE;
 
     if(0 == page_seq) {//1) 
         free = 0;
@@ -342,6 +362,9 @@ static int _page_calc_free(int page_seq, int kern_stop)
         free = 0;
     }
     else if(page_seq >= kern_start && page_seq <= kern_stop) { // 4)
+        free = 0;
+    }
+    else if(page_seq == mpentry) { // LAB4
         free = 0;
     }
 
@@ -573,10 +596,17 @@ boot_map_region(pde_t *pgdir, uintptr_t va, size_t size, physaddr_t pa, int perm
         /*FIXME: 1.maybe overlapped with others
         * */
         if(NULL == (pte = pgdir_walk(pgdir, (void *)va1, 1))) {
-            break;
+            panic("OOM!\n");
         }
         pgdir[PDX(va1)] |= perm;
-        *pte |= pa1 | perm | PTE_P;
+        //if(*pte & PTE_P) {
+            /* As the memory really exists in physic memory,
+             * there is no need to remove this page
+             * We just mapping to the existing memory, not our allocted page
+             * */
+            //page_remove(kern_pgdir, (void *)va1);
+            //}
+        *pte = (pa1 | perm | PTE_P);
 
         ++i;
         va1 += PGSIZE;
@@ -751,7 +781,7 @@ user_mem_check(struct Env *env, const void *va, size_t len, int perm)
     uint8_t *lva = ROUNDDOWN((uint8_t *)va, PGSIZE);
     uint8_t *hva = ROUNDUP((uint8_t *)va + len, PGSIZE);
     uint8_t *addr = lva;
-    //cprintf("0x%x %x %x\n", va, lva, hva);
+    //cprintf("ck 0x%x %x %x\n", va, lva, hva);
 
     int ret = 0;
     pte_t *pte = NULL;
@@ -762,7 +792,8 @@ user_mem_check(struct Env *env, const void *va, size_t len, int perm)
             ret = -E_FAULT;
         }
 
-        if(NULL != (pte =pgdir_walk(env->env_pgdir, addr, 0))) {
+        if(NULL != (pte = pgdir_walk(env->env_pgdir, addr, 0))) {
+            //cprintf("ck 0x%x %x %x\n", va, pte, *pte);
             if(*pte & perm) {
             }
             else {
@@ -995,8 +1026,8 @@ check_kern_pgdir(void)
 	for (n = 0; n < NCPU; n++) {
 		uint32_t base = KSTACKTOP - (KSTKSIZE + KSTKGAP) * (n + 1);
 		for (i = 0; i < KSTKSIZE; i += PGSIZE)
-			assert(check_va2pa(pgdir, base + KSTKGAP + i)
-				== PADDR(percpu_kstacks[n]) + i);
+            assert(check_va2pa(pgdir, base + KSTKGAP + i)
+                    == PADDR(percpu_kstacks[n]) + i);
 		for (i = 0; i < KSTKGAP; i += PGSIZE)
 			assert(check_va2pa(pgdir, base + i) == ~0);
 	}

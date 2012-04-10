@@ -19,6 +19,7 @@ syscall(int num, int check, uint32_t a1, uint32_t a2, uint32_t a3, uint32_t a4, 
 	// The last clause tells the assembler that this can
 	// potentially change the condition codes and arbitrary
 	// memory locations.
+    //cprintf("syscall 0x%x 0x%x 0x%x 0x%x \n",num, a1, a2, a3);
 
 	asm volatile("int %1\n"
 		: "=a" (ret)
@@ -77,6 +78,7 @@ sys_page_alloc(envid_t envid, void *va, int perm)
 int
 sys_page_map(envid_t srcenv, void *srcva, envid_t dstenv, void *dstva, int perm)
 {
+    //cprintf("1 0x%x 0x%x 0x%x 0x%x \n",srcenv, srcva, dstenv, dstva);
 	return syscall(SYS_page_map, 1, srcenv, (uint32_t) srcva, dstenv, (uint32_t) dstva, perm);
 }
 
@@ -97,6 +99,7 @@ sys_env_set_status(envid_t envid, int status)
 int
 sys_env_set_pgfault_upcall(envid_t envid, void *upcall)
 {
+    //cprintf("user set upcall 0x%x 0x%x\n", envid, upcall);
 	return syscall(SYS_env_set_pgfault_upcall, 1, envid, (uint32_t) upcall, 0, 0, 0);
 }
 

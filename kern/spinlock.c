@@ -9,6 +9,7 @@
 #include <kern/spinlock.h>
 #include <kern/kdebug.h>
 
+
 // The big kernel lock
 struct spinlock kernel_lock = {
 #ifdef DEBUG_SPINLOCK
@@ -40,7 +41,7 @@ get_caller_pcs(uint32_t pcs[])
 static int
 holding(struct spinlock *lock)
 {
-	return lock->locked && lock->cpu == thiscpu;
+    return lock->locked && lock->cpu == thiscpu;
 }
 #endif
 
@@ -63,7 +64,7 @@ spin_lock(struct spinlock *lk)
 {
 #ifdef DEBUG_SPINLOCK
 	if (holding(lk))
-		panic("CPU %d cannot acquire %s: already holding", cpunum(), lk->name);
+        panic("CPU %d cannot acquire %s: already holding", cpunum(), lk->name);
 #endif
 
 	// The xchg is atomic.

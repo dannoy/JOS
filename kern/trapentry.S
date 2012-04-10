@@ -66,7 +66,27 @@ TRAPHANDLER(__idt_align, T_ALIGN)		// aligment check
 TRAPHANDLER_NOEC(__idt_mchk, T_MCHK)		// machine check
 TRAPHANDLER_NOEC(__idt_simd, T_SIMDERR)		// SIMD floating point error
 TRAPHANDLER_NOEC(__idt_syscall, T_SYSCALL)		// system call
-#TRAPHANDLER(__idt_default, T_DEFAULT)		// catchall
+
+
+
+TRAPHANDLER_NOEC(__idt_irq0, IRQ_OFFSET + 0)		// system call
+TRAPHANDLER_NOEC(__idt_irq1, IRQ_OFFSET + 1)		// system call
+TRAPHANDLER_NOEC(__idt_irq2, IRQ_OFFSET + 2)		// system call
+TRAPHANDLER_NOEC(__idt_irq3, IRQ_OFFSET + 3)		// system call
+TRAPHANDLER_NOEC(__idt_irq4, IRQ_OFFSET + 4)		// system call
+TRAPHANDLER_NOEC(__idt_irq5, IRQ_OFFSET + 5)		// system call
+TRAPHANDLER_NOEC(__idt_irq6, IRQ_OFFSET + 6)		// system call
+TRAPHANDLER_NOEC(__idt_irq7, IRQ_OFFSET + 7)		// system call
+TRAPHANDLER_NOEC(__idt_irq8, IRQ_OFFSET + 8)		// system call
+TRAPHANDLER_NOEC(__idt_irq9, IRQ_OFFSET + 9)		// system call
+TRAPHANDLER_NOEC(__idt_irq10, IRQ_OFFSET + 10)		// system call
+TRAPHANDLER_NOEC(__idt_irq11, IRQ_OFFSET + 11)		// system call
+TRAPHANDLER_NOEC(__idt_irq12, IRQ_OFFSET + 12)		// system call
+TRAPHANDLER_NOEC(__idt_irq13, IRQ_OFFSET + 13)		// system call
+TRAPHANDLER_NOEC(__idt_irq14, IRQ_OFFSET + 14)		// system call
+
+
+TRAPHANDLER(__idt_default, T_DEFAULT)		// catchall
 
 
 
@@ -75,12 +95,22 @@ TRAPHANDLER_NOEC(__idt_syscall, T_SYSCALL)		// system call
  */
 .globl _alltraps
 _alltraps:
+    #cli
     pushl %ds
     pushl %es
     pushal
     movl $GD_KD, %eax
     movw %ax, %ds
     movw %ax, %es
+
+    pushfl
+    popl %eax
+    movl $FL_IF, %ebx
+    notl %ebx
+    andl %ebx, %eax
+    pushl %eax
+    popfl
+
     pushl %esp
     call trap
     pop %esp

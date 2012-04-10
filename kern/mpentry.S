@@ -74,8 +74,11 @@ start32:
 	movl    $0x0, %ebp       # nuke frame pointer
 
 	# Call mp_main().  (Exercise for the reader: why the indirect call?)
+    #TODO:why indirect call?
+    #AT&T语法中立即操作数前面要加一个字符'$'；寄存器操作数名前要加字符百分号'%'；绝对跳转/调用（相对于与程序计数器有关的跳转/调用）操作数前面要加星号'*'
 	movl    $mp_main, %eax
 	call    *%eax
+    #call *$mp_main # Error: immediate operand illegal with absolute jump
 
 	# If mp_main returns (it shouldn't), loop.
 spin:

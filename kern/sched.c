@@ -29,6 +29,43 @@ sched_yield(void)
 	// below to switch to this CPU's idle environment.
 
 	// LAB 4: Your code here.
+    /* lj */
+    int index = 0;
+    struct Env *newenv = NULL;
+    int n = NENV - NCPU;
+
+    if(curenv) {
+        index = curenv - envs + 1;
+    }
+    else {
+        index = NCPU;
+    }
+
+    //i = 0;
+    //while (i++ < n) {
+        //if(envs[i].env_status) {
+            //cprintf("[sched]%x %d\n", envs[i].env_id, envs[i].env_status);
+        //}
+    //}
+    i = 0;
+    while (i++ < n) {
+        if( envs[index].env_status == ENV_RUNNABLE) {
+            newenv = &envs[index];
+            break;
+        }
+
+        ++index;
+        index %= NENV;
+        if(0 == index) {
+            index = NCPU;
+        }
+    }
+    //cprintf("[%d] %d 0x%x\n", thiscpu->cpu_id, index, newenv);
+    //cprintf("[%d] %d %d 0x%x\n", thiscpu->cpu_id, index, envs[index].env_status, newenv);
+
+    if(newenv) {
+        return env_run(newenv);
+    }
 
 	// For debugging and testing purposes, if there are no
 	// runnable environments other than the idle environments,
